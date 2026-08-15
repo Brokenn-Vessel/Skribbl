@@ -1,0 +1,72 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 200px ;
+    row-gap: 20px;
+}
+
+.username-input {
+    height: 40px ;
+    width: 300px ;
+    border: solid;
+    border-width: 1px;
+    border-radius: 8px;
+    transition: background 0.3s;
+    text-align: center;
+}
+
+.room-id-input {
+    height: 40px ;
+    width: 300px ;
+    border: solid;
+    border-width: 1px;
+    border-radius: 8px;
+    transition: background 0.3s;
+    text-align: center;
+}
+.username-input:hover {
+    background: rgb(219, 219, 219) ;
+}
+
+.room-id-input:hover {
+    background: rgb(219, 219, 219) ;
+}
+
+.buttons {
+    display: flex ;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 30px;
+}
+
+.join-room {
+    height: 40px ;
+    width: 120px ;
+    border: solid ;
+    border-width: 1px;
+    border-radius: 8px ;
+    text-align: center;
+    transition: background 0.3s ;
+}
+
+.create-room {
+    height: 40px ;
+    width: 120px ;
+    border: solid ;
+    border-width: 1px;
+    border-radius: 8px ;
+    text-align: center;
+    transition: background 0.3s ;
+}
+
+
+.join-room:hover {
+    background: rgb(219, 219, 219) ;
+}
+
+.create-room:hover {
+    background: rgb(219, 219, 219) ;
+}
