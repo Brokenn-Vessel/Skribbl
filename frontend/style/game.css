@@ -1,0 +1,82 @@
+.outer-container {
+    background-color: darkgoldenrod;
+    display: flex ;
+    flex-direction: column ;
+    overflow-y: hidden;
+    gap: 5px;
+    height: calc(100vh - 20px) ;
+}
+
+.navbar {
+    background-color: black;
+    flex: 1 ;
+}
+
+.container {
+    flex: 15 ;
+    display: flex ;
+    flex-direction: row ;
+    justify-content: center ;
+    align-items: center ;
+    padding-top: 20px;
+    padding-left: 20px ;
+    padding-right: 20px ;
+    padding-bottom: 20px ;
+    gap: 20px ;
+    height: calc(100vh - 40px) ;
+    overflow-y: hidden ;
+}
+
+.drawing-section {
+    /* background-color: skyblue; */
+    height: 100vh ;
+    flex: 6 ;
+    display: flex ;
+    flex-direction: column;
+    justify-content: center ;
+    align-items: cente ;
+    gap: 20px ;
+}
+
+.player-section {
+    background-color: aqua;
+    height: 100vh ;
+    flex: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 0px ;
+    margin-top: 30px ;
+}
+
+.chat-section {
+    background-color: blueviolet;
+    height: 100vh ;
+    flex: 2 ;
+}
+
+.drawing-section-top {
+    background-color: red ;
+    flex: 0.5 ;
+}
+
+.drawing-canvas {
+    background-color: blanchedalmond ;
+    flex: 7 ;
+}
+
+.drawing-palette {
+    background-color: yellow  ;
+    flex: 1 ;
+}
+
+.player {
+    background-color: grey ;
+    height: 80px ;
+    display: flex;
+    flex-direction: column;
+    justify-content: center ;
+    align-items: center ;
+    border: solid ;
+    /* border-radius: 0px ; */
+    border-width: 1px ;
+}
