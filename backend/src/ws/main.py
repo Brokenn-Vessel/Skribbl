@@ -1,5 +1,5 @@
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter
-import uuid
+import uuid, json
 
 ws_router = APIRouter()
 
@@ -8,54 +8,86 @@ class Player :
         self.username = username
         self.websocket = websocket
 
-class Room : 
-    def __init__(self, room_id) : 
+class Room :
+    def __init__(self, room_id) :
         self.room_id = room_id
-        self.players = []
+        self.players: dict[str, Player] = {}
 
-    def add_player(self, player: Player) : 
-        self.players.append(player) 
+    # uid --> Player (username, websocket) 
+    async def connect(self, uid: str, player: Player) : 
+        await player.websocket.accept() 
+        self.players[uid] = player
 
-    def remove_player(self, player: Player) :
-        self.players.remove(player) 
+        message = json.dumps({
+            "type": "join",
+            "new_player": player.username,
+            "players": self.get_player_list()
+        })
 
-rooms: dict[str, Room] = {}
+        await self.broadcast(message=message) 
 
-class SocketManager :
-    def __init__(self) :
-        self.active: dict[str, Player] = {}
+    async def disconnect(self, uid: str) :
+        leftName = self.players[uid].username ;
+        self.players.pop(uid) 
 
-    async def connect(self, player_uid: str, player: Player) :
-        await player.websocket.accept()
-        self.active[player_uid] = player
+        message = json.dumps({
+            "type": "leave",
+            "player_left": leftName,
+            "players": self.get_player_list()
+        })
 
-    async def disconnect(self, player_uid: str, player: Player) :
-        self.active.pop(player_uid) 
+        await self.broadcast(message=message) 
 
-    async def send_to_one(self, player_uid: str, message: str) :
-        socket = self.active.get(player_uid).websocket
-        await socket.send_text(message)
+    async def send_to_one(self, uid: str, message: str) :
+        await self.players[uid].websocket.send_text(message)
 
-    async def send_to_room(self,room_id,  message: str) :
-        for player in rooms[room_id].values() :
+    async def broadcast(self, message: str) : 
+        for player in self.players.values() :
             await player.websocket.send_text(message)
 
+    def is_empty(self) : 
+        return len(self.players) == 0
 
-manager = SocketManager()
+    def get_player_list(self) : 
+        return [
+            {"uid": uid, "username": player.username} for uid, player in self.players.items() 
+        ]
+
+
+
+class RoomManager :
+    def __init__(self) : 
+        self.rooms: dict[str, Room] = {}
+
+    def get_or_create_room(self, room_id, owner = None) : 
+        if room_id not in self.rooms : 
+            self.rooms[room_id] = Room(room_id) 
+            # --------------------------------------------define owner here ;
+        return self.rooms[room_id] 
+
+    def is_room_empty(self, room_id: str) : 
+        return len(self.rooms[room_id].players) == 0
+
+    def terminate_room(self, room_id: str) : 
+        self.rooms.pop(room_id)   
+
+
+manager = RoomManager()
 
 @ws_router.websocket('/{room_id}')
 async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, uid: str) :
     print(username, uid, room_id)
 
-    if room_id not in rooms :
-        rooms[room_id] = Room(room_id)
-
+    # id room doen't exist new room is created
+    # if room_id not in manager.rooms :
+    room = manager.get_or_create_room(room_id)
     player = Player(username, websocket)
 
-    print("------------okay-----------------------")
-    await manager.connect(uid, player) 
-
-    rooms[room_id].add_player(player) 
+    await room.connect(uid=uid, player=player) 
+    print("*********rooms_info******************")
+    for r in manager.rooms.values() : 
+        print(r.room_id) 
+    print("*********rooms_info******************")
 
     print(f'{player.username} joined the room {room_id}')
     try: 
@@ -63,7 +95,8 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
             await websocket.receive_text()
 
     except WebSocketDisconnect:
-        await manager.disconnect(uid, player)
+        await room.disconnect(uid)
+        if room.is_empty() : 
+            manager.terminate_room(room.room_id) 
         print(f'{player.username} left the room {room_id}')
-        rooms[room_id].remove_player(player)
 
