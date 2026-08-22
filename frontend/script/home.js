@@ -8,11 +8,16 @@ createBtn.addEventListener('click', async () => {
     usernameInput.value = "" ;
     roomIdInput.value = "" ;
 
-    const response = await fetch(`http://127.0.0.1:8000/get_room?username=${name}`) ;
+    const response = await fetch(`http://127.0.0.1:8000/app/get_room?username=${name}`) ;
     const msg = await response.json() ;
 
     sessionStorage.setItem("room_id", msg.room_id) ;
     sessionStorage.setItem("username", msg.owner) ;
+
+    // get a unique identification id for the game
+    const uid_response = await fetch(`http://127.0.0.1:8000/app/get_uid?username=${name}`) ;
+    const uid_msg= await uid_response.json() ;
+    sessionStorage.setItem("uid", uid_msg.uid) ;
 
     // redirect the user to this page 
     window.location.href = "./game.html" ; 
@@ -27,6 +32,11 @@ joinBtn.addEventListener('click', async () => {
 
     sessionStorage.setItem("room_id", room_id) ;
     sessionStorage.setItem("username", name) ;
+
+    // get a unique identification id for the game
+    const uid_response = await fetch(`http://127.0.0.1:8000/app/get_uid?username=${name}`) ;
+    const uid_msg= await uid_response.json() ;
+    sessionStorage.setItem("uid", uid_msg.uid) ;
 
     window.location.href = "./game.html" ;
 }) ;
