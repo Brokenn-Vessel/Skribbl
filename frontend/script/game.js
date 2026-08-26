@@ -11,6 +11,10 @@ console.log(uid) ;
 
 const socket = new WebSocket(`ws://127.0.0.1:8000/ws/${room_id}?username=${myName}&uid=${uid}`) ;
 
+function socketSend(message) {
+    socket.send(JSON.stringify(message)) ;
+}
+
 socket.onopen = () => {
     console.log(`${myName} joined the room ${room_id}`) ;
 } ;
@@ -40,3 +44,5 @@ socket.onmessage = (event) => {
         });
     }
 }
+
+

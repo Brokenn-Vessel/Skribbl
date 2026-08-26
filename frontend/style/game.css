@@ -1,82 +1,127 @@
+* {
+    box-sizing: border-box;
+}
+
 .outer-container {
-    background-color: darkgoldenrod;
-    display: flex ;
-    flex-direction: column ;
-    overflow-y: hidden;
+    /* background-color: darkgoldenrod; */
+    border: solid ;
+    border-width: 5px ;
+    border-radius: 5px ;
+    display: flex;
+    flex-direction: column;
     gap: 5px;
-    height: calc(100vh - 20px) ;
+    height: calc(100vh - 20px);
+    overflow: hidden;
 }
 
 .navbar {
     background-color: black;
-    flex: 1 ;
+    flex: 1;
 }
 
 .container {
-    flex: 15 ;
-    display: flex ;
-    flex-direction: row ;
-    justify-content: center ;
-    align-items: center ;
-    padding-top: 20px;
-    padding-left: 20px ;
-    padding-right: 20px ;
-    padding-bottom: 20px ;
-    gap: 20px ;
-    height: calc(100vh - 40px) ;
-    overflow-y: hidden ;
+    flex: 15;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+    gap: 20px;
+    overflow: hidden;
+    min-height: 0;
 }
 
 .drawing-section {
-    /* background-color: skyblue; */
-    height: 100vh ;
-    flex: 6 ;
-    display: flex ;
+    flex: 6;
+    display: flex;
     flex-direction: column;
-    justify-content: center ;
-    align-items: cente ;
-    gap: 20px ;
+    gap: 20px;
+    min-height: 0;
 }
 
 .player-section {
     background-color: aqua;
-    height: 100vh ;
     flex: 1.5;
     display: flex;
     flex-direction: column;
-    gap: 0px ;
-    margin-top: 30px ;
+    gap: 1px;
+    min-height: 0;
+    overflow-y: auto;
+    margin-left: 10px ; 
 }
 
 .chat-section {
     background-color: blueviolet;
-    height: 100vh ;
-    flex: 2 ;
+    border: solid ;
+    border-width: 3px ;
+    margin-right: 10px ;
+    flex: 2;
+    min-height: 0;
+    display: flex ;
+    flex-direction: column; 
+}
+
+.chatbox {
+    flex: 25 ;
+}
+
+.chat-input-container {
+    flex: 1 ;
+    display: flex;
+    flex-direction: row;
+    justify-content: center ;
+    align-items: stretch ;
+    gap: 10px ;
+}
+
+.chat-input {
+    width: 320px ;
+    height: 30px ;
+    border: solid ;
+    border-width: 2px ;
+}
+
+.send {
+    width: 50px ;
+    height: 30px ;
+    border: solid ;
+    border-radius: 10px ;
+    background-color: greenyellow;
+    transition: background 0.3s ;
+}
+
+.send:hover {
+    background-color: rgb(130, 216, 1);
+}
+
+.send:active {
+    background-color: green ;
 }
 
 .drawing-section-top {
-    background-color: red ;
-    flex: 0.5 ;
+    background-color: red;
+    flex: 0.5;
 }
 
 .drawing-canvas {
-    background-color: blanchedalmond ;
-    flex: 7 ;
+    background-color: white;
+    border: solid ;
+    border-width: 3px ;
+    flex: 7;
 }
 
 .drawing-palette {
-    background-color: yellow  ;
-    flex: 1 ;
+    background-color: yellow;
+    flex: 1;
 }
 
 .player {
-    background-color: grey ;
-    height: 80px ;
+    background-color: pink;
+    height: 80px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center ;
-    align-items: center ;
-    border: solid ;
-    /* border-radius: 0px ; */
-    border-width: 1px ;
+    justify-content: center;
+    align-items: center;
+    border: solid;
+    border-width: 3px;
 }
