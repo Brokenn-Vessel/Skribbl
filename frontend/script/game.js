@@ -7,11 +7,48 @@ const chatbox = document.querySelector('.chatbox') ;
 const inputBox = document.querySelector('.chat-input') ;
 const sendBtn = document.querySelector('.send') ;
 
+const canvas = document.querySelector('.canvas') ;
+const ctx = canvas.getContext("2d") ;
+const boundingRect = canvas.getBoundingClientRect() ;
+
+let isDrawing = false ;
+
+function getCoords(e) {
+    const scaleX = canvas.width / boundingRect.width ;
+    const scaleY = canvas.height / boundingRect.height ;
+    return {
+        x: (e.clientX - boundingRect.left) * scaleX ,
+        y: (e.clientY - boundingRect.top) * scaleY
+    } ;
+}
 
 // websocket server is running on port 8000 ;
 console.log(room_id) 
 console.log(myName) ;
 console.log(uid) ;
+
+canvas.addEventListener("mousedown", (e)=>{
+    isDrawing = true ;
+    const pos = getCoords(e) ;
+    ctx.beginPath() ;
+
+    ctx.strokeStyle = "red" ;
+    ctx.lineWidth = 5 ;
+    ctx.lineCap = "round" ;
+    ctx.moveTo(pos.x, pos.y) ;
+
+}) ;
+
+canvas.addEventListener("mousemove", (e)=>{
+    if(!isDrawing) return ;
+    const pos = getCoords(e) ;
+    ctx.lineTo(pos.x, pos.y) ;
+    ctx.stroke() ;
+}) ;
+
+window.addEventListener("mouseup", (e)=>{
+    isDrawing = false ;
+}) ;
 
 const socket = new WebSocket(`ws://127.0.0.1:8000/ws/${room_id}?username=${myName}&uid=${uid}`) ;
 
