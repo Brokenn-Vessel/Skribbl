@@ -83,16 +83,34 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
     room = manager.get_or_create_room(room_id)
     player = Player(username, websocket)
 
+
+
     await room.connect(uid=uid, player=player) 
     print("*********rooms_info******************")
+
+
+
     for r in manager.rooms.values() : 
         print(r.room_id) 
     print("*********rooms_info******************")
 
+
+
+
     print(f'{player.username} joined the room {room_id}')
+
+
     try: 
         while True: 
-            await websocket.receive_text()
+            data = await websocket.receive_text()
+
+            data = json.loads(data) 
+
+            # print(data.get("type")) 
+
+            if data.get("type") == "guess" : 
+                # data will be validated here 
+                await room.broadcast(json.dumps(data))
 
     except WebSocketDisconnect:
         await room.disconnect(uid)
