@@ -12,6 +12,8 @@ const ctx = canvas.getContext("2d") ;
 const boundingRect = canvas.getBoundingClientRect() ;
 
 let isDrawing = false ;
+let brushColor = "black" ;
+let brushWidth = 10 ;
 
 function getCoords(e) {
     const scaleX = canvas.width / boundingRect.width ;
@@ -32,8 +34,8 @@ canvas.addEventListener("mousedown", (e)=>{
     const pos = getCoords(e) ;
     ctx.beginPath() ;
 
-    ctx.strokeStyle = "red" ;
-    ctx.lineWidth = 5 ;
+    ctx.strokeStyle = brushColor ;
+    ctx.lineWidth = brushWidth ;
     ctx.lineCap = "round" ;
     ctx.moveTo(pos.x, pos.y) ;
 
