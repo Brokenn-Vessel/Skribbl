@@ -5,6 +5,7 @@
     align-items: center;
     margin-top: 200px ;
     row-gap: 20px;
+    /* background: linear-gradient(to right, rgba(133, 133, 133, 0.348), white); */
 }
 
 .username-input {

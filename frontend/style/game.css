@@ -11,6 +11,7 @@
     gap: 5px;
     height: calc(100vh - 20px);
     overflow: hidden;
+    /* background: linear-gradient(to right, black,  rgb(99, 99, 99), black); */
 }
 
 .navbar {
@@ -38,7 +39,7 @@
 }
 
 .player-section {
-    background-color: aqua;
+    /* background-color: aqua; */
     flex: 1.5;
     display: flex;
     flex-direction: column;
@@ -132,6 +133,7 @@
 }
 
 .drawing-canvas {
+    position: relative ;
     background-color: white;
     border: solid;
     border-width: 3px;
@@ -140,7 +142,7 @@
 }
 
 .canvas {
-    background-color: aqua;
+    /* background-color: aqua; */
     width: 100%;
     height: 100%;
     display: block;
@@ -180,4 +182,17 @@
     border: solid;
     border-width: 1px;
     border-radius: 20px;
+}
+
+.game-blocker {
+    position: absolute ;
+    inset: 0 ;
+    display: flex ;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center ;
+    z-index: 99 ;
+    font-size: xx-large ;
+    backdrop-filter: blur(8px);
 }

@@ -7,6 +7,7 @@ const chatbox = document.querySelector('.chatbox') ;
 const inputBox = document.querySelector('.chat-input') ;
 const sendBtn = document.querySelector('.send') ;
 
+const drawingCanvas = document.querySelector('.drawing-canvas') ;
 const canvas = document.querySelector('.canvas') ;
 const ctx = canvas.getContext("2d") ;
 const boundingRect = canvas.getBoundingClientRect() ;
@@ -74,6 +75,23 @@ function sendMessage(event) {
     }
 }
 
+
+function createBlocker(message) {
+    const blocker = document.createElement('div') ;
+    blocker.classList.add('game-blocker') ;
+
+    const prompt = document.createElement('div') ;
+    prompt.classList.add('blocking-prompt') ;
+    prompt.textContent = "Hiii" ;
+
+    blocker.appendChild(prompt) ;
+    drawingCanvas.appendChild(blocker) ;
+}
+
+function removeBlocker() {
+    const blocker = document.querySelector('.game-blocker') ;
+    if(blocker) blocker.remove() ;
+}
 
 sendBtn.addEventListener('click', sendMessage) ;
 socket.onopen = () => {
