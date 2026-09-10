@@ -1,12 +1,14 @@
 const room_id = sessionStorage.getItem("room_id") ;
 const myName = sessionStorage.getItem("username") ;
+let isOwner = false ; 
+let ownerDone = false ;
 const uid = sessionStorage.getItem("uid") ;
 const playerSection = document.querySelector('.player-section') ;
 const chatbox = document.querySelector('.chatbox') ;
 
 const inputBox = document.querySelector('.chat-input') ;
 const sendBtn = document.querySelector('.send') ;
-
+const drawingSectionTop = document.querySelector('.drawing-section-top') ;
 const drawingCanvas = document.querySelector('.drawing-canvas') ;
 const canvas = document.querySelector('.canvas') ;
 const ctx = canvas.getContext("2d") ;
@@ -26,7 +28,7 @@ function getCoords(e) {
 }
 
 // websocket server is running on port 8000 ;
-console.log(room_id) 
+console.log(room_id) ;
 console.log(myName) ;
 console.log(uid) ;
 
@@ -82,15 +84,39 @@ function createBlocker(message) {
 
     const prompt = document.createElement('div') ;
     prompt.classList.add('blocking-prompt') ;
-    prompt.textContent = "Hiii" ;
+    prompt.textContent = `${message}` ;
 
     blocker.appendChild(prompt) ;
-    drawingCanvas.appendChild(blocker) ;
+    // drawingCanvas.appendChild(blocker) ;
+
+    return blocker ;
+}
+
+function pushBlocker(blocker) {
+    drawingCanvas.appendChild(blocker)
 }
 
 function removeBlocker() {
     const blocker = document.querySelector('.game-blocker') ;
     if(blocker) blocker.remove() ;
+}
+
+function ownerPrivileges(is_owner) {
+    if(is_owner) {
+
+        // start button
+        const startbtn = document.createElement('button') ;
+        startbtn.classList.add('start') ;
+        startbtn.textContent = 'START' ;
+        drawingSectionTop.appendChild(startbtn) ;
+        startbtn.addEventListener('click', (e)=>{
+            socketSend({
+                type: "start-game"
+            }) ;
+        }) ;
+
+        ownerDone = true ;
+    }
 }
 
 sendBtn.addEventListener('click', sendMessage) ;
@@ -105,6 +131,12 @@ socket.onmessage = (event) => {
     if(message.type == "join" || message.type == "leave") {
         playerSection.innerHTML = "" ;
         message.players.forEach(p => {
+            // if its self uid
+            if(p.uid == uid) {
+                isOwner = p.is_owner ;
+                if(!ownerDone) ownerPrivileges(p.is_owner) ;
+            }
+
             const player = document.createElement('div') ;
             const player_name = document.createElement('div') ;
             const player_score = document.createElement('div') ;
@@ -148,6 +180,32 @@ socket.onmessage = (event) => {
         msg.appendChild(msgText) ;
 
         chatbox.appendChild(msg) ;
+    }
+
+    if(message.type == "check") {
+        console.log("heyyyyy") ;
+    }
+
+    if(message.type == "wait") {
+        const blocker = createBlocker(`${message.drawer_name} is choosing a word...`) ;
+        pushBlocker(blocker) ;
+    }
+
+    if(message.type == "select") {
+        // console.log(message.words) ;
+
+        const blocker = createBlocker("Choose a word...") ;
+        const words = document.createElement('div') ;
+        words.classList.add('words') ;
+        message.words.forEach(w => {
+            const word = document.createElement('div') ;
+            word.classList.add('word') ;
+            word.innerText = w ;
+
+            words.appendChild(word) ;
+        }) ;
+        blocker.appendChild(words) ;
+        pushBlocker(blocker) ;
     }
 }
 

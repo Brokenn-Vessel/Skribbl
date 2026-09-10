@@ -130,6 +130,25 @@
 .drawing-section-top {
     background-color: red;
     flex: 0.5;
+    display: flex;
+    flex-direction: row ;
+    justify-content: center; 
+    align-items: center;
+}
+
+.start {
+    background: rgb(0, 255, 0);
+    border: solid ;
+    border-width: 1px ;
+    border-color: green;
+    border-radius: 10%;
+    height: 70% ;
+    color: white ;
+    transition: background 0.3s ;
+}
+
+.start:hover {
+    background: rgb(0, 213, 0);
 }
 
 .drawing-canvas {
@@ -192,7 +211,27 @@
     justify-content: center;
     align-items: center;
     text-align: center ;
+    gap: 50px ;
     z-index: 99 ;
-    font-size: xx-large ;
     backdrop-filter: blur(8px);
+}
+
+.blocking-prompt {
+    font-size: x-large ;
+}
+
+
+.words { 
+    display: flex;
+    flex-direction: row ;
+    justify-content: center ;
+    align-items: center ;
+    gap: 50px ;
+    font-size: x-large;
+}
+
+.word {
+    border: solid ;
+    border-width: 2px ;
+    padding: 8px ;
 }
