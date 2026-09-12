@@ -275,6 +275,11 @@ socket.onmessage = (event) => {
     if(message.type == "draw-end") {
         endDrawing(message) ;
     }
+
+    if(message.type == "stop-draw") {
+        const blocker = createBlocker(`The word was ${message.word}`) ;
+        pushBlocker(blocker) 
+    }
 }
 
 

@@ -1,0 +1,22 @@
+words = [
+    "jellyfish", "castle", "avocado", "thunder", "pencil",
+    "submarine", "dragonfly", "coffee", "lighthouse", "zombie",
+    "pinecone", "rocket", "sandcastle", "butterfly", "guitar",
+    "whirlpool", "elephant", "snowboard", "mirror", "volcano",
+    "headphones", "island", "cheetah", "calculator", "fireplace",
+    "apple", "skeleton", "raincoat", "telescope", "wizard",
+    "hamburger", "moonstone", "parrot", "waterfall", "bicycle",
+    "strawberry", "robot", "forest", "spaceship", "anchor",
+    "chocolate", "detective", "cactus", "lightning", "penguin",
+    "sandwich", "pyramid", "snowflake", "camera", "marshmallow",
+    "rainbow", "motorcycle", "garden", "dinosaur", "trumpet",
+    "keyboard", "pirate", "firework", "seashell", "umbrella",
+    "mountain", "football", "moonlight", "toothbrush", "airplane",
+    "treasure", "windmill", "cheesecake", "desert", "stargazer",
+    "skateboard", "lantern", "crocodile", "bookstore", "thunderstorm",
+    "pineapple", "vampire", "rainforest", "snowman", "spacesuit",
+    "newspaper", "volleyball", "wizardry", "timepiece", "helmet",
+    "camera", "avocado", "fireball", "strawberry", "lighthouse",
+    "backpack", "tornado", "window", "mermaid", "spaceship",
+    "diamond", "cactus", "waterfall", "parrot", "volcano"
+]
