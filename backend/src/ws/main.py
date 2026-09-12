@@ -32,7 +32,7 @@ class Player :
         self.websocket = websocket
 
 class Room :
-    def __init__(self, room_id, select_time=5, guess_time=60) :
+    def __init__(self, room_id, select_time=15, guess_time=60) :
         self.room_id = room_id
         self.players: dict[str, Player] = {}
         self.owner: str | None = None
@@ -42,6 +42,7 @@ class Room :
         self.current_drawer_uid: str | None = None
         self.selectFrom: list | None = None
         self.currentWord: str | None = None
+        self.drawer_list: dict[str, bool] | None = None
 
     # uid --> Player (username, websocket) 
     async def connect(self, uid: str, player: Player) : 
@@ -103,10 +104,21 @@ class Room :
         if self.selectFrom is not None:
             self.currentWord = self.selectFrom[0]
             print(self.currentWord)
-            await self.broadcast(json.dumps({
-                "type": "word_to_guess",
-                "length": len(self.currentWord)
+
+            await self.send_to_one(self.current_drawer_uid, json.dumps({
+                "type": "start-draw",
+                "word": self.currentWord,
+                "duration": self.guess_time
             }))
+
+            await self.broadcast_except(self.current_drawer_uid, json.dumps({
+                "type": "guess-start",
+                "word_length": len(self.currentWord),
+                "drawer_name": self.players[self.current_drawer_uid].username,
+                "duration": self.guess_time
+            }))
+
+            self.selectFrom = None
              
 
     async def game_timer(self, callback): 
@@ -121,18 +133,19 @@ class Room :
 
     async def start_round(self): 
         # create a dict (player_id: hasDrawn) at the beginning of the round, this list will be used to track whether a player has drawn yet or not
-        drawerList = {player_id: False for player_id in self.players.keys()}
+        self.drawer_list = {player_id: False for player_id in self.players.keys()}
 
-        print(drawerList)
+        print(self.drawer_list)
 
         # choose a drawer
-        self.current_drawer_uid = self.choose_drawer(drawerList)
+        self.current_drawer_uid = self.choose_drawer(self.drawer_list)
 
         print(self.current_drawer_uid)
 
         # get three words to choose from
         selectFrom = [words[i] for i in (random.randint(0, 99) for _ in range(3))]
         self.selectFrom = selectFrom
+
         print(self.selectFrom)
 
         # send drawer the three words
@@ -141,6 +154,7 @@ class Room :
             "words": selectFrom,
             "time_limit": self.select_time
         }))
+
         # start the timer
         self.timer_task = asyncio.create_task(self.game_timer(self.selection_callback))
 
@@ -205,6 +219,7 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
             data = await websocket.receive_text()
 
             data = json.loads(data) 
+            # dataType = data.get("type")
 
             # print(data.get("type")) 
 
@@ -214,9 +229,66 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
 
             if data.get("type") == "start-game": 
                 print("start") ;
-
+                # check whether its the owner of the room or not
+                if data.get("id") == room.owner: 
                 # start round
-                await room.start_round()   
+                    await room.start_round()   
+
+                else: 
+                    print("This message didn't come from the owner of the room") 
+
+            if data.get("type") == "word-select": 
+                if data.get("id") == room.current_drawer_uid: 
+                    print(f"selected word is {data.get("word")}") 
+
+                    if room.timer_task is not None: 
+                        room.timer_task.cancel() 
+                        room.timer_task = None 
+
+                    room.selectFrom = None
+                    room.currentWord = data.get("word") 
+
+                    await room.send_to_one(room.current_drawer_uid, json.dumps({
+                        "type": "start-draw",
+                        "word": room.currentWord,
+                        "duration": room.guess_time
+                    }))
+                    await room.broadcast_except(room.current_drawer_uid, json.dumps({
+                        "type": "guess-start",
+                        "word_length": len(data.get("word")),
+                        "drawer_name": room.players[room.current_drawer_uid].username,
+                        "duration": room.guess_time
+                    }))
+
+                else: 
+                    print("message didnt come from the original drawer")
+
+            if data.get("type") == "draw-begin": 
+                # print(data.get("x"), data.get("y"))
+                if room.current_drawer_uid and room.current_drawer_uid == data.get("uid"): 
+                    await room.broadcast(json.dumps({
+                        "type": "draw-begin",
+                        "clientX": data.get("clientX"),
+                        "clientY": data.get("clientY"),
+                    })) 
+
+            if data.get("type") == "draw-cont": 
+                # print(data.get("x"), data.get("y")) 
+                if room.current_drawer_uid and room.current_drawer_uid == data.get("uid"): 
+                    await room.broadcast(json.dumps({
+                        "type": "draw-cont",
+                        "clientX": data.get("clientX"),
+                        "clientY": data.get("clientY"),
+                    })) 
+
+            if data.get("type") == "draw-end": 
+                # print(data.get("x"), data.get("y"))
+                if room.current_drawer_uid and room.current_drawer_uid == data.get("uid"): 
+                    await room.broadcast(json.dumps({
+                        "type": "draw-end",
+                        "clientX": data.get("clientX"),
+                        "clientY": data.get("clientY"),
+                    })) 
 
 
     except WebSocketDisconnect:

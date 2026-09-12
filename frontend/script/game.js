@@ -15,6 +15,7 @@ const ctx = canvas.getContext("2d") ;
 const boundingRect = canvas.getBoundingClientRect() ;
 
 let isDrawing = false ;
+let isDrawing_socket = false ;
 let brushColor = "black" ;
 let brushWidth = 10 ;
 
@@ -32,7 +33,7 @@ console.log(room_id) ;
 console.log(myName) ;
 console.log(uid) ;
 
-canvas.addEventListener("mousedown", (e)=>{
+function startDrawing(e) {
     isDrawing = true ;
     const pos = getCoords(e) ;
     ctx.beginPath() ;
@@ -41,18 +42,53 @@ canvas.addEventListener("mousedown", (e)=>{
     ctx.lineWidth = brushWidth ;
     ctx.lineCap = "round" ;
     ctx.moveTo(pos.x, pos.y) ;
+}
 
-}) ;
 
-canvas.addEventListener("mousemove", (e)=>{
+function contDrawing(e) {
     if(!isDrawing) return ;
     const pos = getCoords(e) ;
     ctx.lineTo(pos.x, pos.y) ;
     ctx.stroke() ;
+}
+
+function endDrawing(e) {
+    isDrawing = false ;
+}
+
+canvas.addEventListener("mousedown", (e)=>{
+    // startDrawing(e) ;
+    isDrawing_socket = true ;
+    const pos = getCoords(e) ;
+    socketSend({
+        type: "draw-begin", 
+        clientX: e.clientX,
+        clientY: e.clientY,
+        uid: uid
+    }) ;
+}) ;
+
+canvas.addEventListener("mousemove", (e)=>{
+    // contDrawing(e) ;
+    if(!isDrawing_socket) return ;
+    const pos = getCoords(e) ;
+    socketSend({
+        type: "draw-cont",
+        clientX: e.clientX,
+        clientY: e.clientY,
+        uid: uid
+    }) ;
 }) ;
 
 window.addEventListener("mouseup", (e)=>{
-    isDrawing = false ;
+    // endDrawing(e) ;
+    isDrawing_socket = false ;
+    socketSend({
+        type: "draw-end",
+        clientX: e.clientX,
+        clientY: e.clientY,
+        uid: uid
+    }) ;
 }) ;
 
 const socket = new WebSocket(`ws://127.0.0.1:8000/ws/${room_id}?username=${myName}&uid=${uid}`) ;
@@ -111,8 +147,10 @@ function ownerPrivileges(is_owner) {
         drawingSectionTop.appendChild(startbtn) ;
         startbtn.addEventListener('click', (e)=>{
             socketSend({
-                type: "start-game"
+                type: "start-game",
+                id: uid
             }) ;
+            startbtn.remove() ;
         }) ;
 
         ownerDone = true ;
@@ -136,7 +174,8 @@ socket.onmessage = (event) => {
                 isOwner = p.is_owner ;
                 if(!ownerDone) ownerPrivileges(p.is_owner) ;
             }
-
+            
+            // add player in the player section 
             const player = document.createElement('div') ;
             const player_name = document.createElement('div') ;
             const player_score = document.createElement('div') ;
@@ -152,12 +191,15 @@ socket.onmessage = (event) => {
             player.appendChild(player_score) ;
         
             playerSection.append(player) ;
+
+            // send message in chats
         });
     }
 
     if(message.type == "guess") {   
         console.log(`${message.sender_name}: ${message.message}`) ;
 
+        // a message element is being added to the chat section 
         const msg = document.createElement('div') ;
         if(message.sender_id == uid) {
             msg.classList.add('message-self') ;
@@ -202,10 +244,36 @@ socket.onmessage = (event) => {
             word.classList.add('word') ;
             word.innerText = w ;
 
+            word.addEventListener('click', (e)=>{
+                const selectedWord = word.innerText ;
+                socketSend({
+                    type: "word-select",
+                    word: selectedWord,
+                    id: uid
+                }) ;
+                removeBlocker() ;
+            }) ;
+
             words.appendChild(word) ;
         }) ;
         blocker.appendChild(words) ;
         pushBlocker(blocker) ;
+    }
+
+    if(message.type == "guess-start" || message.type == "start-draw") {
+        removeBlocker() ;
+    }
+
+    if(message.type == "draw-begin") {
+        startDrawing(message) ;
+    }
+
+    if(message.type == "draw-cont") {
+        contDrawing(message) ;
+    }
+
+    if(message.type == "draw-end") {
+        endDrawing(message) ;
     }
 }
 

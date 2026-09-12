@@ -234,4 +234,9 @@
     border: solid ;
     border-width: 2px ;
     padding: 8px ;
+    transition: background 0.3s; 
+}
+
+.word:hover {
+    background: rgb(213, 213, 213); 
 }
