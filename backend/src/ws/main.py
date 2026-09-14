@@ -34,7 +34,28 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
 
             if data.get("type") == "guess" : 
                 # data will be validated here 
-                await room.broadcast(json.dumps(data))
+                # print(room.guessing)
+                
+                if room.guessing :
+                    print(room.hasGuessed) 
+                    # check the message here
+                    correct = room.check(data.get("message"))
+
+                    if correct: 
+                        room.hasGuessed[data.get("sender_id")] = True 
+
+
+                    print("the answer is ", correct)
+
+                    # print(data.get("sender_id") == room.current_drawer_uid)
+
+                    if (data.get("sender_id") != room.current_drawer_uid) and (data.get("sender_id") not in room.hasGuessed):
+
+                        # broadcast 
+                        await room.broadcast(json.dumps(data))
+                    
+                else:   
+                    await room.broadcast(json.dumps(data))
 
             if data.get("type") == "start-game": 
                 print("start") ;
@@ -69,7 +90,7 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
                     }))
 
                     # start-drawing
-                    await room.draw_start()
+                    room.draw_start()
 
                 else: 
                     print("message didnt come from the original drawer")
@@ -100,6 +121,8 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
                         "clientX": data.get("clientX"),
                         "clientY": data.get("clientY"),
                     })) 
+
+                    # if room.timer_task.
 
 
     except WebSocketDisconnect:

@@ -3,18 +3,22 @@ from .player import Player
 from .words import words
 
 class Room :
-    def __init__(self, room_id, select_time=15, guess_time=60) :
+    def __init__(self, room_id, select_time=1, guess_time=1, maxRounds=3) :
         self.room_id = room_id
         self.players: dict[str, Player] = {}
         self.owner: str | None = None
         self.select_time = select_time
         self.guess_time = guess_time
         self.timer_task: asyncio.Task | None = None
+        self.timer_prompt: asyncio.Task | None = None
         self.current_drawer_uid: str | None = None
         self.selectFrom: list | None = None
         self.currentWord: str | None = None
         self.drawer_list: dict[str, bool] | None = None
-        self.hasGuessed: dict[str, bool] | None = None
+        self.hasGuessed: dict[str, bool] = {}
+        self.guessing: bool | None = False
+        self.maxRounds = maxRounds
+        self.round = 0
 
     # uid --> Player (username, websocket) 
     async def connect(self, uid: str, player: Player) : 
@@ -64,6 +68,9 @@ class Room :
             if id != exceptPlayer: 
                 await player.websocket.send_text(message)
 
+
+    # ------------------------------------------------------------------------------------------------------------------------------------------------
+
     def is_empty(self) : 
         return len(self.players) == 0
 
@@ -72,8 +79,11 @@ class Room :
             {"uid": uid, "username": player.username, "is_owner": self.owner == uid} for uid, player in self.players.items() 
         ]
 
+    # -----------------------------------------------------------CALLBACKS----------------------------------------------------------------------------
+
     async def selection_callback(self): 
         if self.selectFrom is not None:
+
             self.currentWord = self.selectFrom[0]
             print(self.currentWord)
 
@@ -93,11 +103,8 @@ class Room :
             self.selectFrom = None
             self.timer_task = None
 
-            # start drawing => {
-            #       a task is created, with timer guess time
-            #       
-            # }
-            await self.draw_start()
+            self.draw_start()
+
              
     async def guess_callback(self): 
         await self.broadcast(json.dumps({
@@ -106,10 +113,14 @@ class Room :
             "word": self.currentWord
         }))
 
-        self.current_drawer_uid = None
-        self.currentWord = None
-        self.selectFrom = None
+        await self.timer(1)
 
+        await self.end_round()
+
+    # -------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+    #----------------------------------------------TIMER-----------------------------------------------------------------------------------------------
 
     # if guess = false, timer is being used for selection of word else if guess=True its being used for guessing
     async def game_timer(self, callback, guess=False): 
@@ -122,19 +133,51 @@ class Room :
             pass 
 
 
-    async def draw_start(self): 
-        self.hasGuessed = {uid: False for uid in self.players.keys()}
+    # normal timer for prompting
+    async def timer(self, time=1): 
+        await asyncio.sleep(time)
+
+    #---------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+    def draw_start(self): 
+        self.guessing = True
+        self.hasGuessed = {}
         self.timer_task = asyncio.create_task(self.game_timer(self.guess_callback, guess=True))
 
 
     async def start_round(self): 
+
+        if self.round >= self.maxRounds: 
+
+            # broadcast leaaderboard and return
+            # cleanup
+
+            await self.end_round()
+            return 
+
+        await self.broadcast(json.dumps({
+            "type": "round-start-prompt",
+            "round": self.round + 1,
+            "duration": 5
+        }))
+
+        await asyncio.sleep(3)
+
         # create a dict (player_id: hasDrawn) at the beginning of the round, this list will be used to track whether a player has drawn yet or not
         self.drawer_list = {player_id: False for player_id in self.players.keys()}
-
         print(self.drawer_list)
 
+        await self.select_start()
+
+
+    async def select_start(self): 
         # choose a drawer
         self.current_drawer_uid = self.choose_drawer(self.drawer_list)
+
+        # no one left to draw case
+        if self.current_drawer_uid is None: 
+            await self.end_round()
 
         print(self.current_drawer_uid)
 
@@ -162,8 +205,56 @@ class Room :
         }))
 
 
+    async def end_round(self): 
+        if self.current_drawer_uid and self.drawer_list: 
+            self.drawer_list[self.current_drawer_uid] = True
+
+        self.current_drawer_uid = None
+        self.currentWord = None
+        self.selectFrom = None 
+        self.guessing = False
+        self.hasGuessed = {}
+
+        if self.drawer_list and False in self.drawer_list.values():
+            await self.select_start()  
+        else: 
+            if self.round < self.maxRounds: 
+                self.drawer_list = None
+                self.round += 1
+                await self.start_round()     
+            else: 
+                # display Leaderboards  
+                await self.broadcast(json.dumps({
+                    "type": "game-over"
+                }))
+
+
+    # -------------------------------------------------HELPERS------------------------------------------------------------------------------------
+
     def choose_drawer(self, drawerList):
         for id, hasDrawn in drawerList.items(): 
             if (id in self.players.keys()) and (hasDrawn is False): 
                 return id 
-        
+
+        return None
+
+    # ccheck whether the guess is correct or not
+    def check(self, message: str): 
+        to_guess = self.currentWord.strip().lower().split()
+
+        print(to_guess)
+        guess = message.strip().lower().split()
+
+        print(guess)
+
+        if len(to_guess) != len(guess): 
+            return False
+
+        for i in range(len(to_guess)): 
+            if to_guess[i] != guess[i]: 
+                return False
+
+        return True 
+
+             
+

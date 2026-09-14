@@ -91,6 +91,11 @@ window.addEventListener("mouseup", (e)=>{
     }) ;
 }) ;
 
+function clearCanvas() {
+    ctx.fillStyle = "white" ;
+    ctx.clearRect(0, 0, canvas.width, canvas.height) ;
+}
+
 const socket = new WebSocket(`ws://127.0.0.1:8000/ws/${room_id}?username=${myName}&uid=${uid}`) ;
 
 function socketSend(message) {
@@ -229,13 +234,14 @@ socket.onmessage = (event) => {
     }
 
     if(message.type == "wait") {
+        removeBlocker() ;
         const blocker = createBlocker(`${message.drawer_name} is choosing a word...`) ;
         pushBlocker(blocker) ;
     }
-
+    // everytime you add a blocker, remove any existing blocker
     if(message.type == "select") {
         // console.log(message.words) ;
-
+        removeBlocker() ;
         const blocker = createBlocker("Choose a word...") ;
         const words = document.createElement('div') ;
         words.classList.add('words') ;
@@ -262,7 +268,10 @@ socket.onmessage = (event) => {
 
     if(message.type == "guess-start" || message.type == "start-draw") {
         removeBlocker() ;
+        clearCanvas() ;
     }
+
+    
 
     if(message.type == "draw-begin") {
         startDrawing(message) ;
@@ -277,8 +286,21 @@ socket.onmessage = (event) => {
     }
 
     if(message.type == "stop-draw") {
+        removeBlocker() ;
         const blocker = createBlocker(`The word was ${message.word}`) ;
         pushBlocker(blocker) 
+    }
+
+    if(message.type == "round-start-prompt") {
+        removeBlocker() ;
+        const blocker = createBlocker(`ROUND ${message.round}`) ;
+        pushBlocker(blocker) ;
+    }
+
+    if(message.type == "game-over") {
+        removeBlocker() ;
+        const blocker = createBlocker("GAME OVER") ;
+        pushBlocker(blocker) ;
     }
 }
 
