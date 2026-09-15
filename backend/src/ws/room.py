@@ -1,9 +1,9 @@
-import uuid, json, asyncio, random
+import uuid, json, asyncio, random, time
 from .player import Player
 from .words import words
 
 class Room :
-    def __init__(self, room_id, select_time=1, guess_time=1, maxRounds=3) :
+    def __init__(self, room_id, select_time=2, guess_time=10, maxRounds=3) :
         self.room_id = room_id
         self.players: dict[str, Player] = {}
         self.owner: str | None = None
@@ -15,15 +15,19 @@ class Room :
         self.selectFrom: list | None = None
         self.currentWord: str | None = None
         self.drawer_list: dict[str, bool] | None = None
+        self.score_list: dict[str, int] = {}
         self.hasGuessed: dict[str, bool] = {}
         self.guessing: bool | None = False
         self.maxRounds = maxRounds
+        self.maxScore = 500
         self.round = 0
+        self.starting_time: int | None = None
 
     # uid --> Player (username, websocket) 
     async def connect(self, uid: str, player: Player) : 
         await player.websocket.accept() 
         self.players[uid] = player
+        self.score_list[uid] = 0
 
         # first player becomes the owner
         if self.owner is None: 
@@ -47,6 +51,8 @@ class Room :
                 self.owner = first_key 
             else: 
                 self.owner = None
+
+        self.score_list.pop(uid)
 
         message = json.dumps({
             "type": "leave",
@@ -76,7 +82,7 @@ class Room :
 
     def get_player_list(self) : 
         return [
-            {"uid": uid, "username": player.username, "is_owner": self.owner == uid} for uid, player in self.players.items() 
+            { "uid": uid, "username": player.username, "is_owner": self.owner == uid, "score": self.score_list[uid] } for uid, player in self.players.items() 
         ]
 
     # -----------------------------------------------------------CALLBACKS----------------------------------------------------------------------------
@@ -107,10 +113,13 @@ class Room :
 
              
     async def guess_callback(self): 
+        self.starting_time = None 
+        
         await self.broadcast(json.dumps({
             "type": "stop-draw",
             "drawer": self.current_drawer_uid,
-            "word": self.currentWord
+            "word": self.currentWord,
+            "players": self.get_player_list()
         }))
 
         await self.timer(1)
@@ -126,7 +135,9 @@ class Room :
     async def game_timer(self, callback, guess=False): 
         try: 
             wait_time = self.select_time if guess is not True else self.guess_time
-            await asyncio.sleep(wait_time)
+            if guess: 
+                self.starting_time = time.time()
+            await asyncio.sleep(wait_time) 
             await callback()
 
         except asyncio.CancelledError:
@@ -144,14 +155,11 @@ class Room :
         self.guessing = True
         self.hasGuessed = {}
         self.timer_task = asyncio.create_task(self.game_timer(self.guess_callback, guess=True))
-
+        # self.timer_task.
 
     async def start_round(self): 
 
         if self.round >= self.maxRounds: 
-
-            # broadcast leaaderboard and return
-            # cleanup
 
             await self.end_round()
             return 
@@ -162,7 +170,7 @@ class Room :
             "duration": 5
         }))
 
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
 
         # create a dict (player_id: hasDrawn) at the beginning of the round, this list will be used to track whether a player has drawn yet or not
         self.drawer_list = {player_id: False for player_id in self.players.keys()}
@@ -214,6 +222,7 @@ class Room :
         self.selectFrom = None 
         self.guessing = False
         self.hasGuessed = {}
+        self.starting_time = None
 
         if self.drawer_list and False in self.drawer_list.values():
             await self.select_start()  
@@ -225,8 +234,20 @@ class Room :
             else: 
                 # display Leaderboards  
                 await self.broadcast(json.dumps({
-                    "type": "game-over"
+                    "type": "game-over",
+                    "owner": self.owner
                 }))
+
+    async def restart(self): 
+        self.reset_room()
+
+        await self.broadcast(json.dumps({
+            "type": "restart-prompt"
+        }))
+
+        await self.timer(3)
+
+        await self.start_round()
 
 
     # -------------------------------------------------HELPERS------------------------------------------------------------------------------------
@@ -254,7 +275,27 @@ class Room :
             if to_guess[i] != guess[i]: 
                 return False
 
-        return True 
+        return True
 
-             
+    def score(self, guess_time): 
+        if self.starting_time is None: 
+            return None
+        time_elapsed = guess_time - self.starting_time
+        s = int(self.maxScore * (1 - (time_elapsed/self.guess_time)))
+        s = s - (s%10)
+
+        return s
+
+    def reset_room(self): 
+        self.timer_task = None
+        self.timer_prompt = None
+        self.current_drawer_uid = None
+        self.selectFrom = None
+        self.currentWord = None
+        self.drawer_list = None
+        self.score_list = {}
+        self.hasGuessed = {}
+        self.guessing = False
+        self.round = 0
+        self.starting_time = None
 

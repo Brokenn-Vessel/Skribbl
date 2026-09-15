@@ -1,12 +1,11 @@
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter
-import uuid, json, asyncio, random
+import uuid, json, asyncio, random, time
 from .room import Room
 from .player import Player
 from .words import words
 from .manager import manager
 
-ws_router = APIRouter()
-
+ws_router = APIRouter() 
 
 @ws_router.websocket('/{room_id}')
 async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, uid: str) :
@@ -40,6 +39,11 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
                     print(room.hasGuessed) 
                     # check the message here
                     correct = room.check(data.get("message"))
+
+                    score = room.score(time.time())
+
+                    if score is not None: 
+                        room.score_list[data.get("sender_id")] += score
 
                     if correct: 
                         room.hasGuessed[data.get("sender_id")] = True 
@@ -123,10 +127,23 @@ async def websocket_endpoint(room_id: str, websocket: WebSocket, username: str, 
                     })) 
 
                     # if room.timer_task.
+            if data.get("type") == "restart": 
 
+                if data.get("uid") == room.owner: 
+                    await room.restart() 
 
     except WebSocketDisconnect:
         await room.disconnect(uid)
+
+        # what happens if the drawer disconnects
+        if room.current_drawer_uid == uid: 
+            if room.timer_task and not room.timer_task.done():
+                room.timer_task.cancel()
+
+                room.timer_task = None
+
+                await room.guess_callback()
+
         if room.is_empty() : 
             manager.terminate_room(room.room_id) 
         print(f'{player.username} left the room {room_id}')

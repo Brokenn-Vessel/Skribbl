@@ -162,6 +162,25 @@ function ownerPrivileges(is_owner) {
     }
 }
 
+function addPlayer(username, score) {
+    // add player in the player section 
+    const player = document.createElement('div') ;
+    const player_name = document.createElement('div') ;
+    const player_score = document.createElement('div') ;
+
+    player.classList.add('player') ;
+    player_name.classList.add('player-name') ;
+    player_score.classList.add('player-score') ;
+
+    player_name.textContent = `${username}` ;
+    player_score.textContent = `${score}` ;
+
+    player.appendChild(player_name) ;
+    player.appendChild(player_score) ;
+
+    playerSection.append(player) ;
+}
+
 sendBtn.addEventListener('click', sendMessage) ;
 socket.onopen = () => {
     console.log(`${myName} joined the room ${room_id}`) ;
@@ -180,23 +199,7 @@ socket.onmessage = (event) => {
                 if(!ownerDone) ownerPrivileges(p.is_owner) ;
             }
             
-            // add player in the player section 
-            const player = document.createElement('div') ;
-            const player_name = document.createElement('div') ;
-            const player_score = document.createElement('div') ;
-        
-            player.classList.add('player') ;
-            player_name.classList.add('player-name') ;
-            player_score.classList.add('player-score') ;
-        
-            player_name.textContent = `${p.username}` ;
-            player_score.textContent = "0" ;
-        
-            player.appendChild(player_name) ;
-            player.appendChild(player_score) ;
-        
-            playerSection.append(player) ;
-
+            addPlayer(p.username, p.score) ;
             // send message in chats
         });
     }
@@ -257,7 +260,7 @@ socket.onmessage = (event) => {
                     word: selectedWord,
                     id: uid
                 }) ;
-                removeBlocker() ;
+                // removeBlocker() ;
             }) ;
 
             words.appendChild(word) ;
@@ -288,6 +291,16 @@ socket.onmessage = (event) => {
     if(message.type == "stop-draw") {
         removeBlocker() ;
         const blocker = createBlocker(`The word was ${message.word}`) ;
+        
+        playerSection.innerHTML = "" ;
+        message.players.forEach(p => {
+            addPlayer(p.username, p.score) ;
+            const playerScore = document.createElement('div') ;
+            playerScore.classList.add('blocking-prompt') ;
+            playerScore.innerText = `${p.username}: ${p.score}` ;
+            blocker.appendChild(playerScore) ;
+        }) ;
+
         pushBlocker(blocker) 
     }
 
@@ -300,6 +313,29 @@ socket.onmessage = (event) => {
     if(message.type == "game-over") {
         removeBlocker() ;
         const blocker = createBlocker("GAME OVER") ;
+
+        
+        if(uid == message.owner) {
+            const resetBtn = document.createElement('div') ;
+            resetBtn.classList.add('word') ;
+            resetBtn.innerText = 'RESTART' ;
+
+            resetBtn.addEventListener('click', (e)=>{
+                socketSend({
+                    type: "restart",
+                    uid: uid
+                }) ;
+            }) ;
+
+            blocker.appendChild(resetBtn) ;
+        }
+
+        pushBlocker(blocker) ;
+    }
+
+    if(message.type == "restart-prompt") {
+        removeBlocker() ;
+        const blocker = createBlocker("Restarting...") ;
         pushBlocker(blocker) ;
     }
 }
